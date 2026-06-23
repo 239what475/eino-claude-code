@@ -103,6 +103,9 @@ func (o *Options) buildArgs(oneShot bool, prompt string) []string {
 	if o.MCPConfigPath != "" {
 		args = append(args, "--mcp-config", o.MCPConfigPath)
 	}
+	if o.StrictMCPConfig {
+		args = append(args, "--strict-mcp-config")
+	}
 	if o.Agents != "" {
 		args = append(args, "--agents", o.Agents)
 	}
@@ -131,6 +134,17 @@ func (o *Options) buildArgs(oneShot bool, prompt string) []string {
 	if o.IncludePartialMessages {
 		args = append(args, "--include-partial-messages")
 	}
+	if o.Debug {
+		if o.DebugFilter != "" {
+			args = append(args, "--debug", o.DebugFilter)
+		} else {
+			args = append(args, "--debug")
+		}
+	}
+	if o.DebugFile != "" {
+		args = append(args, "--debug-file", o.DebugFile)
+	}
+
 	if o.Effort != "" {
 		args = append(args, "--effort", o.Effort)
 	}

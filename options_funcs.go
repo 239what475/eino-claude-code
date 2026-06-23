@@ -331,3 +331,30 @@ func WithPluginURL(url string) Option {
 		o.PluginURLs = append(o.PluginURLs, url)
 	}
 }
+
+// WithStrictMCPConfig controls whether only --mcp-config servers are used.
+// When true (default), local .mcp.json files are ignored — appropriate for
+// SDK use where MCP configuration should be explicit.
+func WithStrictMCPConfig(v bool) Option {
+	return func(o *Options) {
+		o.StrictMCPConfig = v
+	}
+}
+
+// WithDebug enables debug mode with optional category filtering.
+// Example filter: "api,hooks". Pass "" to enable all debug output.
+func WithDebug(filter string) Option {
+	return func(o *Options) {
+		o.Debug = true
+		o.DebugFilter = filter
+	}
+}
+
+// WithDebugFile writes debug logs to the given file path.
+// Implicitly enables debug mode. Use for capturing CLI debug output
+// separately from stderr.
+func WithDebugFile(path string) Option {
+	return func(o *Options) {
+		o.DebugFile = path
+	}
+}

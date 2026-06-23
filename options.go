@@ -64,6 +64,10 @@ type Options struct {
 	// MCPConfigPath is the path to an MCP configuration file.
 	MCPConfigPath string
 
+	// StrictMCPConfig ignores all MCP servers except those from --mcp-config.
+	// Default: true (SDK should not load local .mcp.json).
+	StrictMCPConfig bool
+
 	// --- Config options ---
 	// Bare enables minimal mode: skip hooks, LSP, plugin sync, attribution,
 	// auto-memory, keychain reads, and CLAUDE.md auto-discovery.
@@ -103,6 +107,14 @@ type Options struct {
 	Effort string
 	// StructuredOutput sets a JSON Schema for structured output.
 	StructuredOutput string
+	// Debug enables debug mode. Default: false.
+	Debug bool
+	// DebugFilter is an optional category filter for debug output (e.g. "api,hooks").
+	// Only used when Debug is true.
+	DebugFilter string
+	// DebugFile writes debug logs to a specific file path.
+	// Implicitly enables debug mode.
+	DebugFile string
 
 	// --- eino integration options ---
 	// EmitToolEvents controls whether Claude Code's internal tool calls are surfaced
@@ -151,5 +163,6 @@ func DefaultOptions() *Options {
 		Bare:                              true,
 		ExcludeDynamicSystemPromptSections: true,
 		PermissionMode:                    "dontAsk",
+		StrictMCPConfig:                   true,
 	}
 }

@@ -596,3 +596,73 @@ func TestWithAgents(t *testing.T) {
 		t.Errorf("tester should not have tools field (omitempty): %s", opts.Agents)
 	}
 }
+
+func TestBuildArgs_StrictMCPConfig(t *testing.T) {
+	// Default should include --strict-mcp-config
+	opts := DefaultOptions()
+	args := opts.BuildArgs("test")
+	argStr := strings.Join(args, " ")
+
+	if !strings.Contains(argStr, "--strict-mcp-config") {
+		t.Error("missing --strict-mcp-config flag (default true)")
+	}
+
+	// When disabled, should not appear
+	opts.StrictMCPConfig = false
+	args = opts.BuildArgs("test")
+	argStr = strings.Join(args, " ")
+	if strings.Contains(argStr, "--strict-mcp-config") {
+		t.Error("--strict-mcp-config should not be present when disabled")
+	}
+}
+
+func TestBuildArgs_Debug(t *testing.T) {
+	// Debug with filter
+	opts := DefaultOptions()
+	opts.Debug = true
+	opts.DebugFilter = "api,hooks"
+
+	args := opts.BuildArgs("test")
+	argStr := strings.Join(args, " ")
+
+	if !strings.Contains(argStr, "--debug api,hooks") {
+		t.Errorf("missing --debug with filter in: %s", argStr)
+	}
+
+	// Debug without filter
+	opts.DebugFilter = ""
+	args = opts.BuildArgs("test")
+	argStr = strings.Join(args, " ")
+	if strings.Count(argStr, "--debug") != 1 {
+		t.Errorf("expected exactly one --debug (no filter) in: %s", argStr)
+	}
+}
+
+func TestBuildArgs_DebugFile(t *testing.T) {
+	opts := DefaultOptions()
+	opts.DebugFile = "/tmp/claude-debug.log"
+
+	args := opts.BuildArgs("test")
+	argStr := strings.Join(args, " ")
+
+	if !strings.Contains(argStr, "--debug-file /tmp/claude-debug.log") {
+		t.Errorf("missing --debug-file in: %s", argStr)
+	}
+}
+
+func TestBuildArgs_DebugAndFile(t *testing.T) {
+	opts := DefaultOptions()
+	opts.Debug = true
+	opts.DebugFilter = "api"
+	opts.DebugFile = "/tmp/claude-debug.log"
+
+	args := opts.BuildArgs("test")
+	argStr := strings.Join(args, " ")
+
+	if !strings.Contains(argStr, "--debug api") {
+		t.Error("missing --debug with filter")
+	}
+	if !strings.Contains(argStr, "--debug-file /tmp/claude-debug.log") {
+		t.Error("missing --debug-file")
+	}
+}
