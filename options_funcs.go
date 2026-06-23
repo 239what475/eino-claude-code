@@ -142,6 +142,35 @@ func WithEffort(effort string) Option {
 	}
 }
 
+// WithBare controls minimal mode (bare). Default: true.
+// Bare mode skips hooks, LSP, plugin sync, attribution, auto-memory, keychain
+// reads, and CLAUDE.md auto-discovery — appropriate for SDK/programmatic use.
+// Set WithBare(false) if you need interactive initialization features.
+func WithBare(v bool) Option {
+	return func(o *Options) {
+		o.Bare = v
+	}
+}
+
+// WithExcludeDynamicSystemPromptSections controls whether per-machine sections
+// (cwd, env info, git status) are moved from the system prompt into the first
+// user message. Default: true. Improves Anthropic prompt-cache reuse.
+// Ignored when a custom SystemPrompt is set.
+func WithExcludeDynamicSystemPromptSections(v bool) Option {
+	return func(o *Options) {
+		o.ExcludeDynamicSystemPromptSections = v
+	}
+}
+
+// WithNoSessionPersistence disables writing sessions to disk.
+// Use for stateless one-shot tasks where sessions don't need to be resumed.
+// Default: false. Only works with one-shot mode (--print).
+func WithNoSessionPersistence(v bool) Option {
+	return func(o *Options) {
+		o.NoSessionPersistence = v
+	}
+}
+
 // WithEmitToolEvents enables surfacing Claude Code's internal tool calls as
 // AgentEvents (with ToolCalls on the message). This gives parent agents
 // visibility into what tools Claude Code is using.

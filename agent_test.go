@@ -324,7 +324,9 @@ func TestBuildArgs(t *testing.T) {
 		"-p",
 		"--verbose",
 		"--output-format stream-json",
+		"--bare",
 		"--system-prompt You are helpful.",
+		"--exclude-dynamic-system-prompt-sections",
 		"--model claude-sonnet-4-6",
 		"--max-turns 5",
 		"--permission-mode acceptEdits",
@@ -419,7 +421,9 @@ func TestBuildArgsAllOptions(t *testing.T) {
 	argStr := strings.Join(args, " ")
 
 	checks := []string{
+		"--bare",
 		"--append-system-prompt Be helpful.",
+		"--exclude-dynamic-system-prompt-sections",
 		"--fallback-model claude-haiku-4-5",
 		"--max-budget-usd 10.000000",
 		"--permission-prompt-tool custom",
@@ -453,5 +457,54 @@ func TestBuildArgsContinue(t *testing.T) {
 	}
 	if !strings.Contains(argStr, "--resume session-123") {
 		t.Error("missing --resume flag")
+	}
+}
+
+func TestBuildArgs_NoBare(t *testing.T) {
+	opts := DefaultOptions()
+	opts.Bare = false
+
+	args := opts.BuildArgs("test")
+	argStr := strings.Join(args, " ")
+
+	if strings.Contains(argStr, "--bare") {
+		t.Error("--bare should not be present when Bare=false")
+	}
+}
+
+func TestBuildArgs_NoExcludeDynamic(t *testing.T) {
+	opts := DefaultOptions()
+	opts.ExcludeDynamicSystemPromptSections = false
+
+	args := opts.BuildArgs("test")
+	argStr := strings.Join(args, " ")
+
+	if strings.Contains(argStr, "--exclude-dynamic-system-prompt-sections") {
+		t.Error("--exclude-dynamic-system-prompt-sections should not be present when disabled")
+	}
+}
+
+func TestBuildArgs_NoSessionPersistence(t *testing.T) {
+	opts := DefaultOptions()
+	opts.NoSessionPersistence = true
+
+	args := opts.BuildArgs("test")
+	argStr := strings.Join(args, " ")
+
+	if !strings.Contains(argStr, "--no-session-persistence") {
+		t.Error("missing --no-session-persistence flag")
+	}
+}
+
+func TestBuildArgs_NoSessionPersistence_ClientMode(t *testing.T) {
+	// --no-session-persistence should NOT appear in Client mode args.
+	opts := DefaultOptions()
+	opts.NoSessionPersistence = true
+
+	args := opts.buildClientArgs()
+	argStr := strings.Join(args, " ")
+
+	if strings.Contains(argStr, "--no-session-persistence") {
+		t.Error("--no-session-persistence should not be present in Client mode")
 	}
 }

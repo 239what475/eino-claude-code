@@ -51,6 +51,10 @@ type Options struct {
 	SessionID string
 	// ForkSession forks the resumed session to a new session ID.
 	ForkSession bool
+	// NoSessionPersistence disables writing sessions to disk.
+	// When true, sessions cannot be resumed. Only works with --print (one-shot mode).
+	// Default: false (sessions are persisted for cross-agent context sharing).
+	NoSessionPersistence bool
 
 	// --- MCP options ---
 	// MCPConfig is inline MCP server configuration in JSON format.
@@ -59,6 +63,14 @@ type Options struct {
 	MCPConfigPath string
 
 	// --- Config options ---
+	// Bare enables minimal mode: skip hooks, LSP, plugin sync, attribution,
+	// auto-memory, keychain reads, and CLAUDE.md auto-discovery.
+	// Default: true (SDK/programmatic use doesn't need interactive initialization).
+	Bare bool
+	// ExcludeDynamicSystemPromptSections moves per-machine sections (cwd, env,
+	// git status) from the system prompt into the first user message, improving
+	// Anthropic prompt-cache reuse. Default: true. Ignored when SystemPrompt is set.
+	ExcludeDynamicSystemPromptSections bool
 	// SettingSources controls which settings files to load (nil = default, empty = none).
 	SettingSources []string
 	// Settings is JSON settings to pass inline.
@@ -113,9 +125,11 @@ type Options struct {
 // DefaultOptions returns the recommended default configuration.
 func DefaultOptions() *Options {
 	return &Options{
-		Name:        "claude-code",
-		Description: "Invokes the locally installed Claude Code CLI to handle complex, multi-step tasks with file operations, bash commands, and MCP tools.",
-		Bin:         FindCLI("claude"),
-		MaxTurns:    0,
+		Name:                              "claude-code",
+		Description:                       "Invokes the locally installed Claude Code CLI to handle complex, multi-step tasks with file operations, bash commands, and MCP tools.",
+		Bin:                               FindCLI("claude"),
+		MaxTurns:                          0,
+		Bare:                              true,
+		ExcludeDynamicSystemPromptSections: true,
 	}
 }

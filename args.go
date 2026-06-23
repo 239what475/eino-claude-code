@@ -35,10 +35,17 @@ func (o *Options) buildArgs(oneShot bool, prompt string) []string {
 		args = []string{"--verbose", "--output-format", "stream-json", "--input-format", "stream-json"}
 	}
 
+	if o.Bare {
+		args = append(args, "--bare")
+	}
+
 	if o.AppendSystemPrompt != "" {
 		args = append(args, "--append-system-prompt", o.AppendSystemPrompt)
 	} else if o.SystemPrompt != "" {
 		args = append(args, "--system-prompt", o.SystemPrompt)
+	}
+	if o.ExcludeDynamicSystemPromptSections {
+		args = append(args, "--exclude-dynamic-system-prompt-sections")
 	}
 
 	if o.Tools != nil {
@@ -85,6 +92,10 @@ func (o *Options) buildArgs(oneShot bool, prompt string) []string {
 	}
 	if o.ForkSession {
 		args = append(args, "--fork-session")
+	}
+	// --no-session-persistence only works with --print (one-shot mode).
+	if oneShot && o.NoSessionPersistence {
+		args = append(args, "--no-session-persistence")
 	}
 	if o.MCPConfig != "" {
 		args = append(args, "--mcp-config", o.MCPConfig)
