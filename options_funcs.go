@@ -77,7 +77,8 @@ func WithMaxBudgetUSD(budget float64) Option {
 }
 
 // WithPermissionMode sets the permission mode.
-// Valid values: "default", "acceptEdits", "plan", "bypassPermissions".
+// Valid values: "default", "acceptEdits", "plan", "bypassPermissions", "auto", "dontAsk".
+// Default: "dontAsk".
 func WithPermissionMode(mode string) Option {
 	return func(o *Options) {
 		o.PermissionMode = mode
@@ -138,6 +139,7 @@ func WithIncludePartialMessages() Option {
 }
 
 // WithEffort sets the thinking effort level.
+// Valid values: "low", "medium", "high", "xhigh", "max".
 func WithEffort(effort string) Option {
 	return func(o *Options) {
 		o.Effort = effort

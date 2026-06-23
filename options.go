@@ -37,7 +37,9 @@ type Options struct {
 	MaxBudgetUSD float64
 
 	// --- Permission options ---
-	// PermissionMode sets the permission mode (e.g., "default", "acceptEdits", "plan", "bypassPermissions").
+	// PermissionMode sets the permission mode.
+	// Valid: "default", "acceptEdits", "plan", "bypassPermissions", "auto", "dontAsk".
+	// Default: "dontAsk" (no interactive prompts — appropriate for SDK use).
 	PermissionMode string
 	// PermissionPromptToolName sets the tool used for permission prompts (default: auto when hooks are set).
 	PermissionPromptToolName string
@@ -96,7 +98,8 @@ type Options struct {
 	// --- Advanced options ---
 	// IncludePartialMessages requests partial message streaming events.
 	IncludePartialMessages bool
-	// Effort sets the thinking effort level ("low", "medium", "high").
+	// Effort sets the thinking effort level.
+	// Valid: "low", "medium", "high", "xhigh", "max".
 	Effort string
 	// StructuredOutput sets a JSON Schema for structured output.
 	StructuredOutput string
@@ -147,5 +150,6 @@ func DefaultOptions() *Options {
 		MaxTurns:                          0,
 		Bare:                              true,
 		ExcludeDynamicSystemPromptSections: true,
+		PermissionMode:                    "dontAsk",
 	}
 }
