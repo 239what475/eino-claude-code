@@ -426,7 +426,6 @@ func TestBuildArgsAllOptions(t *testing.T) {
 		"--exclude-dynamic-system-prompt-sections",
 		"--fallback-model claude-haiku-4-5",
 		"--max-budget-usd 10.000000",
-		"--permission-prompt-tool custom",
 		"--fork-session",
 		"--mcp-config /path/to/mcp.json",
 		"--json-schema {\"type\":\"object\"}",

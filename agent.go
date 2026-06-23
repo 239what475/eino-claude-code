@@ -9,16 +9,9 @@ import (
 	"github.com/cloudwego/eino/schema"
 )
 
-// ClaudeCodeAgent is an eino Agent that invokes a locally installed Claude Code CLI.
-//
-// It implements adk.Agent (i.e., TypedAgent[*schema.Message]) and can be used with
+// ClaudeCodeAgent is an eino Agent that invokes a locally installed Claude Code CLI
+// in one-shot mode (claude -p). It implements adk.Agent and can be used with
 // eino's runner, composed into multi-agent topologies, or wrapped as a tool.
-//
-// Two modes are supported:
-//
-//	One-shot (default):  claude -p --output-format stream-json [opts] <prompt>
-//	Multi-turn (Client): claude --output-format stream-json --input-format stream-json
-//	                     Sends user messages via stdin JSON, reuses the CLI process.
 //
 // Basic usage:
 //
@@ -105,24 +98,6 @@ func (a *ClaudeCodeAgent) run(ctx context.Context, input *adk.AgentInput, gen *a
 
 	convOpts := convertOptions{emitToolEvents: a.opts.EmitToolEvents}
 
-	// Multi-turn mode: use the long-lived Client if available.
-	if a.opts.Client != nil {
-		responses, err := a.opts.Client.Send(ctx, prompt)
-		if err != nil {
-			gen.Send(&adk.AgentEvent{
-				AgentName: a.name,
-				Err:       &AgentError{Message: "claude client send failed", Cause: err},
-			})
-			return
-		}
-		if _, _, err := convertCLIToAgentEvents(responses, a.name, gen, convOpts); err != nil {
-			gen.Send(&adk.AgentEvent{
-				AgentName: a.name,
-				Err:       &AgentError{Message: "failed to convert CLI output", Cause: err},
-			})
-		}
-		return
-	}
 
 	// One-shot mode: spawn a new CLI process per Run() call.
 	args := a.opts.BuildArgs(prompt)

@@ -76,9 +76,6 @@ func (o *Options) buildArgs(oneShot bool, prompt string) []string {
 	if o.PermissionMode != "" {
 		args = append(args, "--permission-mode", o.PermissionMode)
 	}
-	if o.PermissionPromptToolName != "" {
-		args = append(args, "--permission-prompt-tool", o.PermissionPromptToolName)
-	}
 	if o.ContinueConversation {
 		args = append(args, "--continue")
 	}

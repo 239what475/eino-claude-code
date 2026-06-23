@@ -145,29 +145,6 @@ agentTool := adk.NewAgentTool(ctx, agent)
 // agentTool 现在是标准的 tool.BaseTool，可以加入任何 ToolsConfig
 ```
 
-### 模式 5：多轮 Client（复用 CLI 进程）
-
-避免每次调用都启动新 CLI 进程，适用于连续对话。
-
-```go
-client, _ := claudecode.NewClient(
-    claudecode.WithMaxTurns(20),
-    claudecode.WithPermissionMode("acceptEdits"),
-)
-client.Connect(ctx)
-defer client.Close()
-
-agent, _ := claudecode.New(claudecode.WithClient(client))
-
-// Turn 1
-agent.Run(ctx, &adk.AgentInput{
-    Messages: []*schema.Message{{Role: schema.User, Content: "Hello"}},
-})
-// Turn 2 — 同一个 CLI 进程，保持上下文
-agent.Run(ctx, &adk.AgentInput{
-    Messages: []*schema.Message{{Role: schema.User, Content: "What did I just say?"}},
-})
-```
 
 ## 配置选项
 
@@ -214,7 +191,6 @@ agent.Run(ctx, &adk.AgentInput{
 | Option | 说明 |
 |--------|------|
 | `WithPermissionMode(mode)` | `"default"`, `"acceptEdits"`, `"plan"`, `"bypassPermissions"` |
-| `WithPermissionPromptTool(name)` | 权限提示使用的工具 |
 
 ### 会话
 
@@ -246,14 +222,11 @@ agent.Run(ctx, &adk.AgentInput{
 | `WithAddDirs(dirs...)` | 添加工作目录 |
 | `WithIncludePartialMessages()` | 请求部分消息流事件 |
 | `WithExtraArgs(args)` | 透传额外 CLI 参数 |
-| `WithClient(client)` | 使用多轮 Client 模式 |
 
 ### eino 集成
 
 | Option | 说明 |
 |--------|------|
-| `WithHooks(event, matchers...)` | 注册生命周期 Hook（10 种事件） |
-| `WithOnToolUse(fn)` | 工具调用前权限回调 |
 
 ## 与 eino 生态的兼容性
 
@@ -301,15 +274,7 @@ agent.Run(ctx, &adk.AgentInput{
 
 ### 运行环境
 
-- **必须安装 `claude` CLI**。不支持纯 API 模式（如需纯 API，用 eino 自带的 `ext/components/model/claude`）。
-- **每次 Run() 启动新进程**（除非使用 Client 模式）。冷启动延迟约 200ms，对 LLM 调用的秒级延迟来说可忽略。
-- **Client 模式需要 `--input-format stream-json` 协议**。这是 Advanced 模式，比 Simple 模式略复杂。
 
-### Hook 和权限
-
-- **Hook 仅在 Client 模式下生效**。Simple 模式（`claude -p`）不支持 stdin 控制协议。
-- **`WithOnToolUse` 回调在 `--allowedTools` 自动批准时不会触发**。只有需要权限判断的工具才会触发回调。
-- **AskUserQuestion 处理已定义类型但未完整实现控制流**。
 
 ### 与 ChatModelAgent 的行为差异
 
@@ -324,22 +289,17 @@ agent.Run(ctx, &adk.AgentInput{
 ├── agent_test.go         # 单元测试（mock CLI）
 ├── args.go               # FindCLI + BuildArgs
 ├── cli.go                # CLI 子进程管理（Simple + Streaming 模式）
-├── client.go             # Client 多轮模式（Connect / Send / Close）
 ├── convertor.go          # CLI JSON ↔ eino AgentEvent 转换
 ├── errors.go             # CLIError, AgentError, sentinel errors
-├── hooks.go              # Hook 系统（10 种事件 + 权限回调类型）
 ├── interrupt.go          # ResumableAgent 实现（checkpoint 状态序列化）
 ├── options.go            # Options 结构
 ├── options_funcs.go      # 35 个 With* 配置函数
-├── protocol.go           # stdin JSON 控制协议（can_use_tool / hook_callback）
 ├── session.go            # NewSessionID
 ├── tool.go               # ClaudeCodeTool (tool.InvokableTool)
 ├── types.go              # CLI JSON 消息类型
 ├── examples/
 │   ├── helloworld/       # 最简示例（流式输出 + session）
 │   ├── tool/             # ChatModelAgent 调度 ClaudeCodeTool
-│   ├── multiturn/        # Client 多轮对话 + 上下文保持
-│   └── hooks/            # 权限回调 + Hook 观测
 └── README.md
 ```
 
@@ -352,8 +312,6 @@ agent.Run(ctx, &adk.AgentInput{
 | 流式输出 | ✅ MessageStream | ✅ iter.Seq2 | ❌ 批量 |
 | eino 多 Agent | ✅ | ❌ | ❌ |
 | eino Callback | ✅ | ❌ | ❌ |
-| Hook 系统 | ✅ 10 种事件 | ✅ 10 种事件 | ❌ |
-| 权限回调 | ✅ OnToolUse | ✅ OnToolUse | ❌ |
 | MCP 管理 | ⚠️ 配置透传 | ✅ 完整 API | ⚠️ 透传 |
 | 依赖 | eino + uuid | 零依赖 | tRPC 框架 |
 | CLI 路径发现 | ✅ | ✅ | ❌ |

@@ -120,9 +120,6 @@ type Options struct {
 	// EmitToolEvents controls whether Claude Code's internal tool calls are surfaced
 	// as AgentEvents with ToolCalls.
 	EmitToolEvents bool
-	// Client, if set, enables multi-turn mode. The agent will use this
-	// long-lived connection instead of spawning a new process per Run() call.
-	Client *Client
 
 	// --- Callbacks ---
 	// Stderr receives each line of stderr output from the CLI process.
@@ -133,11 +130,6 @@ type Options struct {
 	// (empty string for boolean flags).
 	ExtraArgs map[string]string
 
-	// --- Hooks (see hooks.go) ---
-	// Hooks maps hook events to matchers with callbacks.
-	Hooks map[HookEvent][]HookMatcher
-	// OnToolUse is called before each tool execution to decide allow/deny.
-	OnToolUse OnToolUseFunc
 
 	// --- Internal / testing ---
 	// Runner abstracts CLI execution for testing.

@@ -184,16 +184,6 @@ func WithEmitToolEvents() Option {
 	}
 }
 
-// WithClient sets a long-lived Client for multi-turn conversations.
-// When set, the agent reuses the same CLI process across Run() calls,
-// avoiding cold-start overhead. The caller is responsible for calling
-// client.Connect() before use and client.Close() when done.
-func WithClient(client *Client) Option {
-	return func(o *Options) {
-		o.Client = client
-	}
-}
-
 // WithCWD sets the working directory for the CLI process.
 func WithCWD(dir string) Option {
 	return func(o *Options) {
@@ -269,33 +259,6 @@ func WithMCPConfigPath(path string) Option {
 func WithStderr(fn func(string)) Option {
 	return func(o *Options) {
 		o.Stderr = fn
-	}
-}
-
-// WithPermissionPromptTool sets the tool used for permission prompts.
-func WithPermissionPromptTool(toolName string) Option {
-	return func(o *Options) {
-		o.PermissionPromptToolName = toolName
-	}
-}
-
-// WithHooks registers lifecycle hook callbacks.
-// event: the hook event (e.g., HookPreToolUse).
-// matchers: tool name patterns and their callbacks.
-func WithHooks(event HookEvent, matchers ...HookMatcher) Option {
-	return func(o *Options) {
-		if o.Hooks == nil {
-			o.Hooks = make(map[HookEvent][]HookMatcher)
-		}
-		o.Hooks[event] = append(o.Hooks[event], matchers...)
-	}
-}
-
-// WithOnToolUse sets a callback that is called before each tool execution.
-// Return PermissionAllow to permit, PermissionDeny to block.
-func WithOnToolUse(fn OnToolUseFunc) Option {
-	return func(o *Options) {
-		o.OnToolUse = fn
 	}
 }
 
