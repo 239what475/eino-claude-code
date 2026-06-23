@@ -79,6 +79,13 @@ type Options struct {
 	AddDirs []string
 	// Betas enables beta features.
 	Betas []string
+	// Agents is a JSON string defining custom agent types for sub-agent delegation.
+	// Use WithAgents(map[string]AgentDefinition{...}) to build it.
+	Agents string
+	// PluginDirs are paths to plugin directories or .zip files to load.
+	PluginDirs []string
+	// PluginURLs are URLs to fetch plugin .zip files from.
+	PluginURLs []string
 
 	// --- Environment options ---
 	// CWD sets the working directory for the CLI process.
@@ -120,6 +127,15 @@ type Options struct {
 	// --- Internal / testing ---
 	// Runner abstracts CLI execution for testing.
 	Runner runner
+}
+
+// AgentDefinition defines a custom agent type for Claude Code's sub-agent system.
+// It is serialized to JSON and passed via --agents.
+type AgentDefinition struct {
+	Description string   `json:"description"`
+	Prompt      string   `json:"prompt"`
+	Tools       []string `json:"tools,omitempty"`
+	Model       string   `json:"model,omitempty"` // "sonnet", "opus", "haiku", "inherit"
 }
 
 // DefaultOptions returns the recommended default configuration.

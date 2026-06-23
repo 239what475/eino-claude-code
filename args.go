@@ -103,6 +103,9 @@ func (o *Options) buildArgs(oneShot bool, prompt string) []string {
 	if o.MCPConfigPath != "" {
 		args = append(args, "--mcp-config", o.MCPConfigPath)
 	}
+	if o.Agents != "" {
+		args = append(args, "--agents", o.Agents)
+	}
 	if o.SettingSources != nil {
 		if len(o.SettingSources) == 0 {
 			args = append(args, "--setting-sources", "")
@@ -115,6 +118,12 @@ func (o *Options) buildArgs(oneShot bool, prompt string) []string {
 	}
 	for _, d := range o.AddDirs {
 		args = append(args, "--add-dir", d)
+	}
+	for _, d := range o.PluginDirs {
+		args = append(args, "--plugin-dir", d)
+	}
+	for _, u := range o.PluginURLs {
+		args = append(args, "--plugin-url", u)
 	}
 	for _, b := range o.Betas {
 		args = append(args, "--betas", b)

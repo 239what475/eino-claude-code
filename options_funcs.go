@@ -1,5 +1,7 @@
 package claudecode
 
+import "encoding/json"
+
 // Option is a functional option for configuring a ClaudeCodeAgent.
 type Option func(*Options)
 
@@ -299,5 +301,31 @@ func WithOnToolUse(fn OnToolUseFunc) Option {
 func withRunner(r runner) Option {
 	return func(o *Options) {
 		o.Runner = r
+	}
+}
+
+// WithAgents registers custom agent definitions for sub-agent delegation.
+// Keys are agent type names (e.g., "reviewer", "tester").
+// The map is serialized to JSON and passed to the CLI via --agents.
+func WithAgents(agents map[string]AgentDefinition) Option {
+	return func(o *Options) {
+		b, _ := json.Marshal(agents)
+		o.Agents = string(b)
+	}
+}
+
+// WithPluginDir adds a plugin directory or .zip file to load for this session.
+// Repeatable — each call appends another path.
+func WithPluginDir(path string) Option {
+	return func(o *Options) {
+		o.PluginDirs = append(o.PluginDirs, path)
+	}
+}
+
+// WithPluginURL adds a URL to fetch a plugin .zip from for this session.
+// Repeatable — each call appends another URL.
+func WithPluginURL(url string) Option {
+	return func(o *Options) {
+		o.PluginURLs = append(o.PluginURLs, url)
 	}
 }

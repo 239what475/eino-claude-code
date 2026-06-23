@@ -508,3 +508,91 @@ func TestBuildArgs_NoSessionPersistence_ClientMode(t *testing.T) {
 		t.Error("--no-session-persistence should not be present in Client mode")
 	}
 }
+
+func TestBuildArgs_Agents(t *testing.T) {
+	opts := DefaultOptions()
+	opts.Agents = `{"reviewer":{"description":"Reviews code","prompt":"You are a code reviewer"}}`
+
+	args := opts.BuildArgs("test")
+	argStr := strings.Join(args, " ")
+
+	if !strings.Contains(argStr, "--agents") {
+		t.Error("missing --agents flag")
+	}
+	if !strings.Contains(argStr, `{"reviewer":`) {
+		t.Errorf("agents JSON not found in: %s", argStr)
+	}
+}
+
+func TestBuildArgs_PluginDirs(t *testing.T) {
+	opts := DefaultOptions()
+	opts.PluginDirs = []string{"/path/to/plugin", "/other/plugin.zip"}
+
+	args := opts.BuildArgs("test")
+	argStr := strings.Join(args, " ")
+
+	if !strings.Contains(argStr, "--plugin-dir /path/to/plugin") {
+		t.Error("missing first --plugin-dir flag")
+	}
+	if !strings.Contains(argStr, "--plugin-dir /other/plugin.zip") {
+		t.Error("missing second --plugin-dir flag")
+	}
+}
+
+func TestBuildArgs_PluginURLs(t *testing.T) {
+	opts := DefaultOptions()
+	opts.PluginURLs = []string{"https://example.com/plugin.zip"}
+
+	args := opts.BuildArgs("test")
+	argStr := strings.Join(args, " ")
+
+	if !strings.Contains(argStr, "--plugin-url https://example.com/plugin.zip") {
+		t.Error("missing --plugin-url flag")
+	}
+}
+
+func TestWithAgents(t *testing.T) {
+	agents := map[string]AgentDefinition{
+		"reviewer": {
+			Description: "Reviews code",
+			Prompt:      "You are a code reviewer.",
+			Tools:       []string{"Read", "Glob", "Grep"},
+			Model:       "sonnet",
+		},
+		"tester": {
+			Description: "Runs tests",
+			Prompt:      "You are a test engineer.",
+		},
+	}
+
+	opts := DefaultOptions()
+	opt := WithAgents(agents)
+	opt(opts)
+
+	if opts.Agents == "" {
+		t.Fatal("Agents should not be empty")
+	}
+
+	// Verify JSON structure
+	expectedKeys := []string{`"reviewer"`, `"tester"`, `"description"`, `"prompt"`, `code reviewer`, `test engineer`}
+	for _, key := range expectedKeys {
+		if !strings.Contains(opts.Agents, key) {
+			t.Errorf("Agents JSON missing %q: %s", key, opts.Agents)
+		}
+	}
+
+	// Verify Tools are included for reviewer
+	if !strings.Contains(opts.Agents, `"Read","Glob","Grep"`) {
+		t.Errorf("Agents JSON missing tools: %s", opts.Agents)
+	}
+
+	// Verify Model is included for reviewer
+	if !strings.Contains(opts.Agents, `"model":"sonnet"`) {
+		t.Errorf("Agents JSON missing model: %s", opts.Agents)
+	}
+
+	// Verify tester has no tools (omitempty)
+	if strings.Contains(opts.Agents, `"tester".*"tools"`) {
+		t.Errorf("tester should not have tools field (omitempty): %s", opts.Agents)
+	}
+}
