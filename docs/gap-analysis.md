@@ -34,6 +34,8 @@ and model config, this is entirely wasted work every single `Run()` call.
 
 **Decision**: `WithBare()` defaults to **true**. Provide `WithBare(false)` to opt out.
 
+**Status**: ✅ Implemented.
+
 ### `--exclude-dynamic-system-prompt-sections`
 
 ```
@@ -51,6 +53,8 @@ the default system prompt (ignored with `--system-prompt`).
 **Decision**: `WithExcludeDynamicSystemPromptSections()` defaults to **true**.
 Provide `WithExcludeDynamicSystemPromptSections(false)` to opt out.
 
+**Status**: ✅ Implemented.
+
 ### `--no-session-persistence`
 
 ```
@@ -65,6 +69,8 @@ it should NOT be the default — session sharing between agents is a key use cas
 
 **Decision**: `WithNoSessionPersistence()` defaults to **false**. Users opt in
 when they want stateless execution.
+
+**Status**: ✅ Implemented.
 
 ---
 
@@ -84,7 +90,10 @@ Entry point to Claude Code's sub-agent system. Without it, eino users must write
 agent files to `.claude/agents/` on disk. With it, sub-agent types can be
 defined inline at agent creation time.
 
-**Proposed**: `WithAgents(json)` or a structured `WithAgentDefinitions(...)`.
+**Proposed**: `WithAgents(map[string]AgentDefinition{...})` — typed Go struct,
+marshaled to JSON internally.
+
+**Status**: ✅ Implemented.
 
 ### `--plugin-dir` / `--plugin-url` (Plugin System)
 
@@ -98,6 +107,8 @@ toolkit**, not our visibility into it.
 
 **Proposed**: `WithPluginDir(path)` and `WithPluginURL(url)`, both repeatable.
 
+**Status**: ✅ Implemented.
+
 ### `--file` (File Resources at Startup)
 
 ```
@@ -105,7 +116,9 @@ toolkit**, not our visibility into it.
                    Format: file_id:relative_path
 ```
 
-**Proposed**: `WithFiles(specs ...string)`.
+**Decision**: Skipped. Designed for IDE/frontend file upload integration — not
+relevant for SDK/black-box-executor use. Files should be in the working directory
+and accessed via the Read tool.
 
 ### `-n, --name` (Session Display Name)
 
@@ -113,31 +126,34 @@ toolkit**, not our visibility into it.
 -n, --name <name>  Set a display name for this session
 ```
 
-Distinct from `WithName` (which sets the eino agent name). Useful when sessions
-appear in `/resume` pickers or logs.
-
-**Proposed**: `WithSessionName(name)`.
+**Decision**: Skipped. Only visible in interactive TUI (`/resume` picker, prompt
+box). eino already has `WithName()` for agent naming. Sessions are identified
+by UUID (`--session-id`).
 
 ### `--output-format json` (Single JSON Result)
 
 We hardcode `--output-format stream-json`. The CLI also supports `json` (single
-result object at end) and `text`. The `json` format is simpler and more efficient
-when streaming is not needed.
+result object at end) and `text`.
 
-**Proposed**: `WithOutputFormat(format)` supporting `"json"`, `"stream-json"`, `"text"`.
+**Decision**: Skipped. `stream-json` already covers both eino streaming and
+non-streaming modes — we collect all JSON lines in batch mode, or stream them
+in streaming mode. Adding `json` format would require a second parsing path
+with no real benefit.
 
 ### Permission Modes: `auto` and `dontAsk`
 
 We support `default`, `acceptEdits`, `plan`, `bypassPermissions`. The CLI also
 has `auto` and `dontAsk`.
 
-**Proposed**: Update docs, no code change needed (we pass the string through).
+**Status**: Low priority. We pass permission mode through as a string — adding
+docs for `auto`/`dontAsk` is sufficient. No code change needed.
 
 ### Effort Levels: `xhigh` and `max`
 
 We support `low`, `medium`, `high`. The CLI also has `xhigh` and `max`.
 
-**Proposed**: Update docs, no code change needed (we pass the string through).
+**Status**: Low priority. We pass effort through as a string — adding docs for
+`xhigh`/`max` is sufficient. No code change needed.
 
 ### `--agent` (Session Agent Override)
 
@@ -145,9 +161,10 @@ We support `low`, `medium`, `high`. The CLI also has `xhigh` and `max`.
 --agent <agent>  Agent for the current session. Overrides the 'agent' setting.
 ```
 
-Selects which custom agent type to use.
+Selects which custom agent type (defined via `--agents`) to use as the default.
 
-**Proposed**: `WithAgent(name)`.
+**Status**: Deferred. `--agents` is implemented; `--agent` is a minor companion
+flag. `WithAgent(name)` can be added when needed.
 
 ### `--brief` (SendUserMessage Tool)
 
@@ -155,7 +172,9 @@ Selects which custom agent type to use.
 --brief  Enable SendUserMessage tool for agent-to-user communication
 ```
 
-**Proposed**: `WithBrief()`.
+**Status**: Deferred. For black-box executor use, agent-to-user communication
+is not needed. `WithBrief()` can be added when human-in-the-loop workflows are
+required.
 
 ---
 
@@ -278,10 +297,12 @@ interactive/debugging features that don't block the black-box-executor use case.
 
 ## Implementation Order
 
-1. **P0 (now)** — `--bare`, `--exclude-dynamic-system-prompt-sections`,
+1. **P0 (done)** — `--bare`, `--exclude-dynamic-system-prompt-sections`,
    `--no-session-persistence`. Three flags, straightforward.
-2. **P1 (next)** — `--agents`, `--plugin-dir/url`, `--output-format`, permission
-   modes, effort levels. Enhance the executor's capabilities.
-3. **P2 (as needed)** — everything else.
-4. **Audit infrastructure (when needed)** — hooks fix, AskUserQuestion,
+2. **P1 (done)** — `--agents`, `--plugin-dir/url`. Sub-agent definitions and
+   plugin loading.
+3. **P1 remaining** — Permission modes and effort levels (docs only).
+   `--agent`, `--brief` (deferred until needed).
+4. **P2 (as needed)** — everything else.
+5. **Audit infrastructure (when needed)** — hooks fix, AskUserQuestion,
    `--include-hook-events`, initialize protocol.
