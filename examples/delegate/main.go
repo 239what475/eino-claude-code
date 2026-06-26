@@ -19,7 +19,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
-	"os/exec"
 	"strings"
 
 	"github.com/cloudwego/eino/adk"
@@ -42,18 +41,19 @@ func run() error {
 	agent, err := claudecode.New(
 		claudecode.WithMaxTurns(10),
 		claudecode.WithEmitToolEvents(),
-		claudecode.WithAgents(map[string]claudecode.AgentDefinition{
-			"code-reviewer": {
-				Description: "Reviews code for bugs, style, and best practices.",
-				Prompt:      "You are a thorough code reviewer. Be specific, reference line numbers, and find real issues.",
-				Tools:       []string{"Read", "Glob", "Grep"},
-				Model:       "haiku",
-			},
-		}),
 		claudecode.WithCustomTools(
 			newAgentTool("explore", "Explore the codebase: search files, find patterns, map structure. Use for 'find all X' or 'how does Y work' questions. task: what to explore."),
 			newAgentTool("plan", "Design an implementation plan. Use before complex changes. task: what to plan for."),
-			newAgentTool("code-reviewer", "Review code for bugs, style, and best practices. task: what file or change to review."),
+			newAgentTool("code-reviewer", "Review code for bugs, style, and best practices. task: what file or change to review.",
+				claudecode.WithAgents(map[string]claudecode.AgentDefinition{
+					"code-reviewer": {
+						Description: "Reviews code for bugs, style, and best practices.",
+						Prompt:      "You are a thorough code reviewer. Be specific, reference line numbers, and find real issues.",
+						Tools:       []string{"Read", "Glob", "Grep"},
+						Model:       "haiku",
+					},
+				}),
+			),
 		),
 	)
 	if err != nil {
@@ -98,15 +98,16 @@ func run() error {
 
 // ── Agent-as-MCP-Tool ──
 
-// agentTool wraps claude -p --agent <name> as an eino InvokableTool.
-// When called, it spawns a new Claude Code process running as the named agent.
+// agentTool wraps a ClaudeCodeAgent as an eino InvokableTool.
+// When called, it runs the agent in one-shot mode and returns the result.
 type agentTool struct {
 	name string
 	desc string
+	opts []claudecode.Option
 }
 
-func newAgentTool(name, desc string) tool.InvokableTool {
-	return &agentTool{name: name, desc: desc}
+func newAgentTool(name, desc string, opts ...claudecode.Option) tool.InvokableTool {
+	return &agentTool{name: name, desc: desc, opts: opts}
 }
 
 func (t *agentTool) Info(ctx context.Context) (*schema.ToolInfo, error) {
@@ -130,59 +131,37 @@ func (t *agentTool) InvokableRun(ctx context.Context, argumentsInJSON string, op
 		return "", fmt.Errorf("task is required")
 	}
 
-	// Spawn a focused one-shot session as the target agent.
-	//nolint:gosec
-	cmd := exec.CommandContext(ctx,
-		findCLI(),
-		"-p", "--verbose",
-		"--output-format", "stream-json",
-		"--bare",
-		"--permission-mode", "dontAsk",
-		"--max-turns", "10",
-		"--model", "claude-haiku-4-5",
-		"--agent", t.name,
-		args.Task,
+	agent, err := claudecode.New(
+		append([]claudecode.Option{
+			claudecode.WithMaxTurns(10),
+			claudecode.WithModel("claude-haiku-4-5"),
+			claudecode.WithAgent(t.name),
+		}, t.opts...)...,
 	)
-
-	output, err := cmd.CombinedOutput()
 	if err != nil {
-		return "", fmt.Errorf("agent %s failed: %w\noutput: %s", t.name, err, string(output))
+		return "", fmt.Errorf("create delegate agent: %w", err)
 	}
 
-	// Extract the result text from stream-json output.
-	return parseCLIResult(string(output))
-}
+	runner := adk.NewRunner(ctx, adk.RunnerConfig{Agent: agent})
+	events := runner.Run(ctx, []adk.Message{schema.UserMessage(args.Task)})
 
-// findCLI locates the claude binary (respects the caller's PATH).
-func findCLI() string {
-	if p, err := exec.LookPath("claude"); err == nil {
-		return p
-	}
-	return "claude"
-}
-
-// parseCLIResult extracts the final result text from stream-json output.
-func parseCLIResult(raw string) (string, error) {
-	lines := strings.Split(raw, "\n")
 	var lastResult string
-	for _, line := range lines {
-		line = strings.TrimSpace(line)
-		if line == "" {
-			continue
+	for {
+		evt, ok := events.Next()
+		if !ok {
+			break
 		}
-		var resp struct {
-			Type   string `json:"type"`
-			Result string `json:"result"`
+		if evt.Err != nil {
+			return "", fmt.Errorf("agent %s failed: %w", t.name, evt.Err)
 		}
-		if err := json.Unmarshal([]byte(line), &resp); err != nil {
-			continue
+		if evt.Output != nil && evt.Output.MessageOutput != nil && evt.Output.MessageOutput.Message != nil {
+			if c := strings.TrimSpace(evt.Output.MessageOutput.Message.Content); c != "" {
+				lastResult = c
+			}
 		}
-		if resp.Type == "result" {
-			lastResult = resp.Result
+		if evt.Action != nil && evt.Action.Exit {
+			break
 		}
-	}
-	if lastResult == "" {
-		return "", fmt.Errorf("no result found in CLI output")
 	}
 	return lastResult, nil
 }
