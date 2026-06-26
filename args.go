@@ -18,16 +18,22 @@ func FindCLI(name string) string {
 
 // BuildArgs constructs the CLI argument list for one-shot mode (claude -p).
 func (o *Options) BuildArgs(prompt string) []string {
-	return o.buildArgs(true, prompt)
+	return append(o.buildFlags(true), prompt)
+}
+
+// BuildFlags returns the CLI flags without the positional prompt.
+// This allows callers to insert additional flags before the prompt.
+func (o *Options) BuildFlags() []string {
+	return o.buildFlags(true)
 }
 
 // buildClientArgs constructs args for Client mode (stdin JSON protocol, no -p).
 func (o *Options) buildClientArgs() []string {
-	return o.buildArgs(false, "")
+	return o.buildFlags(false)
 }
 
-// buildArgs constructs CLI args. When oneShot is true, adds -p and a positional prompt.
-func (o *Options) buildArgs(oneShot bool, prompt string) []string {
+// buildFlags constructs CLI flags. When oneShot is true, adds -p and base flags.
+func (o *Options) buildFlags(oneShot bool) []string {
 	var args []string
 	if oneShot {
 		args = []string{"-p", "--verbose", "--output-format", "stream-json"}
@@ -159,7 +165,6 @@ func (o *Options) buildArgs(oneShot bool, prompt string) []string {
 		}
 	}
 
-	args = append(args, prompt)
 	return args
 }
 

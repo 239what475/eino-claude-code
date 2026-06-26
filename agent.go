@@ -111,19 +111,16 @@ func (a *ClaudeCodeAgent) run(ctx context.Context, input *adk.AgentInput, gen *a
 		defer mcpSrv.close()
 	}
 
-	// Build CLI args.
-	args := a.opts.BuildArgs(prompt)
-
-	// Inject MCP config before the prompt. --mcp-config is variadic, so
-	// we insert "--" to stop option parsing and protect the prompt.
-	// Also auto-allow all tools from our embedded MCP server.
+	// Build CLI args: flags → extra flags → prompt.
+	args := a.opts.BuildFlags()
 	if mcpSrv != nil {
-		args = append(args[:len(args)-1],
+		args = append(args,
 			"--mcp-config", mcpSrv.mcpConfigJSON(),
 			"--allowedTools", "mcp__eino-tools__*",
 			"--",
-			args[len(args)-1])
+		)
 	}
+	args = append(args, prompt)
 
 	if input.EnableStreaming {
 		// Streaming mode: emit MessageStream chunks as CLI outputs text.
