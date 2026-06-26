@@ -32,11 +32,19 @@ func NewTool(opts ...Option) (*ClaudeCodeTool, error) {
 	if err != nil {
 		return nil, fmt.Errorf("claudecode: create tool: %w", err)
 	}
+	return NewToolFromAgent(agent), nil
+}
+
+// NewToolFromAgent wraps an existing [ClaudeCodeAgent] as a [ClaudeCodeTool].
+// The agent's name and description become the tool's metadata.
+// This is useful when the same agent configuration needs to serve both as a
+// standalone agent and as a callable tool in a multi-agent setup.
+func NewToolFromAgent(agent *ClaudeCodeAgent) *ClaudeCodeTool {
 	return &ClaudeCodeTool{
 		name:        agent.name,
 		description: agent.description,
 		agent:       agent,
-	}, nil
+	}
 }
 
 // Info returns the tool metadata for registration with eino.
