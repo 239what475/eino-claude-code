@@ -163,8 +163,7 @@ We support `low`, `medium`, `high`. The CLI also has `xhigh` and `max`.
 
 Selects which custom agent type (defined via `--agents`) to use as the default.
 
-**Status**: Deferred. `--agents` is implemented; `--agent` is a minor companion
-flag. `WithAgent(name)` can be added when needed.
+**Status**: ✅ Implemented. `WithAgent(name)` passes `--agent` to CLI.
 
 ### `--brief` (SendUserMessage Tool)
 
