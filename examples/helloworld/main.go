@@ -37,7 +37,6 @@ func run() error {
 	agent, err := claudecode.New(
 		claudecode.WithSessionID(sid),
 		claudecode.WithMaxTurns(3),
-		claudecode.WithPermissionMode("acceptEdits"),
 	)
 	if err != nil {
 		return fmt.Errorf("create agent: %w", err)
