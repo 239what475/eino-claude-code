@@ -184,11 +184,11 @@ required.
 |----------|-------------|-----------------|
 | `--ide` | Auto-connect to IDE | `WithIDE()` |
 | `--from-pr` | Resume session from PR | `WithFromPR(prNum)` |
-| `--debug` / `--debug-file` | Debug logging | `WithDebug(filter)` / `WithDebugFile(path)` |
+| `--debug` / `--debug-file` | Debug logging | `WithDebug(filter)` / `WithDebugFile(path)` | ✅ |
 | `--worktree` + `--tmux` | Git worktree isolation | `WithWorktree(name)` / `WithTmux()` |
 | `--chrome` / `--no-chrome` | Chrome integration toggle | `WithChrome()` / `WithNoChrome()` |
 | `--safe-mode` | Troubleshooting mode | `WithSafeMode()` |
-| `--strict-mcp-config` | Strict MCP, ignore other configs | `WithStrictMCPConfig()` |
+| `--strict-mcp-config` | Strict MCP, ignore other configs | `WithStrictMCPConfig()` | ✅ |
 | `--disable-slash-commands` | Disable all skills | `WithDisableSlashCommands()` |
 | `--ax-screen-reader` | Accessibility | `WithScreenReader()` |
 | `--remote-control` | Remote control | `WithRemoteControl(name)` |
