@@ -652,3 +652,84 @@ func TestBuildArgs_DebugAndFile(t *testing.T) {
 		t.Error("missing --debug-file")
 	}
 }
+
+func TestBuildAssistantMessage_TextOnly(t *testing.T) {
+	msg, ok := buildAssistantMessage(&cliMessage{
+		Role:    "assistant",
+		Content: []cliContentBlock{{Type: "text", Text: "Hello!"}},
+	}, convertOptions{})
+	if !ok {
+		t.Fatal("expected ok=true")
+	}
+	if msg.Content != "Hello!" {
+		t.Errorf("expected 'Hello!', got %q", msg.Content)
+	}
+}
+
+func TestBuildAssistantMessage_Empty(t *testing.T) {
+	_, ok := buildAssistantMessage(&cliMessage{Content: []cliContentBlock{}}, convertOptions{})
+	if ok {
+		t.Error("expected ok=false for empty content")
+	}
+}
+
+func TestBuildAssistantMessage_ToolUse(t *testing.T) {
+	msg, ok := buildAssistantMessage(&cliMessage{
+		Content: []cliContentBlock{
+			{Type: "tool_use", ID: "call-1", Name: "Bash", Input: map[string]any{"cmd": "ls"}},
+		},
+	}, convertOptions{emitToolEvents: true})
+	if !ok {
+		t.Fatal("expected ok=true with emitToolEvents")
+	}
+	if len(msg.ToolCalls) != 1 || msg.ToolCalls[0].Function.Name != "Bash" {
+		t.Errorf("expected ToolCall{Name: Bash}, got %+v", msg.ToolCalls)
+	}
+}
+
+func TestBuildAssistantMessage_ToolUseHidden(t *testing.T) {
+	_, ok := buildAssistantMessage(&cliMessage{
+		Content: []cliContentBlock{
+			{Type: "tool_use", ID: "call-1", Name: "Bash", Input: map[string]any{"cmd": "ls"}},
+		},
+	}, convertOptions{})
+	if ok {
+		t.Error("expected ok=false — tool_use without emitToolEvents should be hidden")
+	}
+}
+
+func TestParseTaskSubAgent(t *testing.T) {
+	tests := []struct {
+		json string
+		want string
+	}{
+		{`{"subagent_type":"Explore"}`, "Explore"},
+		{`{}`, ""},
+		{`{`, ""},
+		{`{"subagent_type":"Plan"}`, "Plan"},
+	}
+	for _, tt := range tests {
+		if got := parseTaskSubAgent(tt.json); got != tt.want {
+			t.Errorf("parseTaskSubAgent(%q) = %q, want %q", tt.json, got, tt.want)
+		}
+	}
+}
+
+func TestConvertCLIToAgentEvents_SessionID(t *testing.T) {
+	iter, gen := adk.NewAsyncIteratorPair[*adk.AgentEvent]()
+	done := make(chan struct{})
+	go func() {
+		for { _, ok := iter.Next(); if !ok { break } }
+		close(done)
+	}()
+
+	responses := []cliResponse{
+		{Type: "system", Subtype: "init", SessionID: "abc-123"},
+		{Type: "result", Subtype: "success", Result: "", StopReason: "end_turn"},
+	}
+	_, sid, _ := convertCLIToAgentEvents(responses, "test", gen, convertOptions{}); gen.Close()
+	if sid != "abc-123" {
+		t.Errorf("expected 'abc-123', got %q", sid)
+	}
+	<-done
+}
