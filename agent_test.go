@@ -494,7 +494,6 @@ func TestBuildArgs_NoSessionPersistence(t *testing.T) {
 	}
 }
 
-
 func TestBuildArgs_Agents(t *testing.T) {
 	opts := DefaultOptions()
 	opts.Agents = `{"reviewer":{"description":"Reviews code","prompt":"You are a code reviewer"}}`
@@ -719,7 +718,12 @@ func TestConvertCLIToAgentEvents_SessionID(t *testing.T) {
 	iter, gen := adk.NewAsyncIteratorPair[*adk.AgentEvent]()
 	done := make(chan struct{})
 	go func() {
-		for { _, ok := iter.Next(); if !ok { break } }
+		for {
+			_, ok := iter.Next()
+			if !ok {
+				break
+			}
+		}
 		close(done)
 	}()
 
@@ -727,7 +731,8 @@ func TestConvertCLIToAgentEvents_SessionID(t *testing.T) {
 		{Type: "system", Subtype: "init", SessionID: "abc-123"},
 		{Type: "result", Subtype: "success", Result: "", StopReason: "end_turn"},
 	}
-	_, sid, _ := convertCLIToAgentEvents(responses, "test", gen, convertOptions{}); gen.Close()
+	_, sid, _ := convertCLIToAgentEvents(responses, "test", gen, convertOptions{})
+	gen.Close()
 	if sid != "abc-123" {
 		t.Errorf("expected 'abc-123', got %q", sid)
 	}

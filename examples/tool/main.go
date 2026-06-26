@@ -43,9 +43,9 @@ func run() error {
 		claudecode.WithMaxTurns(10),
 		claudecode.WithPermissionMode("acceptEdits"),
 		claudecode.WithAllowedTools(
-				claudecode.ToolRead, claudecode.ToolWrite, claudecode.ToolEdit,
-				claudecode.ToolBash, claudecode.ToolGlob, claudecode.ToolGrep,
-			),
+			claudecode.ToolRead, claudecode.ToolWrite, claudecode.ToolEdit,
+			claudecode.ToolBash, claudecode.ToolGlob, claudecode.ToolGrep,
+		),
 	)
 	if err != nil {
 		return fmt.Errorf("create tool: %w", err)
@@ -113,7 +113,7 @@ func (m *demoModel) Generate(ctx context.Context, input []*schema.Message, opts 
 		return &schema.Message{
 			Role: schema.Assistant,
 			ToolCalls: []schema.ToolCall{{
-				ID:   "call-1", Type: "function",
+				ID: "call-1", Type: "function",
 				Function: schema.FunctionCall{
 					Name:      "claude_code",
 					Arguments: fmt.Sprintf(`{"task":%q}`, last.Content),

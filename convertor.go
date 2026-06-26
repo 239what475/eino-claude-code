@@ -302,5 +302,3 @@ func errorEvent(agentName string, errMsg string) *adk.AgentEvent {
 		Err:       &AgentError{Message: errMsg},
 	}
 }
-
-

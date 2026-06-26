@@ -1,10 +1,10 @@
 package claudecode
 
 import (
-	"strings"
-	"sort"
 	"fmt"
 	"os/exec"
+	"sort"
+	"strings"
 )
 
 // FindCLI locates the claude CLI binary. If the given name is an absolute or
@@ -28,7 +28,6 @@ func (o *Options) BuildArgs(prompt string) []string {
 func (o *Options) BuildFlags() []string {
 	return o.buildFlags(true)
 }
-
 
 // buildFlags constructs CLI flags. When oneShot is true, adds -p and base flags.
 func (o *Options) buildFlags(oneShot bool) []string {
@@ -170,7 +169,6 @@ func (o *Options) buildFlags(oneShot bool) []string {
 }
 
 func join(ss []string, sep string) string { return strings.Join(ss, sep) }
-
 
 func sortedKeys(m map[string]string) []string {
 	keys := make([]string, 0, len(m))

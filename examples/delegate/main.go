@@ -120,7 +120,9 @@ func (t *agentTool) Info(ctx context.Context) (*schema.ToolInfo, error) {
 }
 
 func (t *agentTool) InvokableRun(ctx context.Context, argumentsInJSON string, opts ...tool.Option) (string, error) {
-	var args struct{ Task string `json:"task"` }
+	var args struct {
+		Task string `json:"task"`
+	}
 	if err := json.Unmarshal([]byte(argumentsInJSON), &args); err != nil {
 		return "", fmt.Errorf("parse args: %w", err)
 	}
@@ -129,6 +131,7 @@ func (t *agentTool) InvokableRun(ctx context.Context, argumentsInJSON string, op
 	}
 
 	// Spawn a focused one-shot session as the target agent.
+	//nolint:gosec
 	cmd := exec.CommandContext(ctx,
 		findCLI(),
 		"-p", "--verbose",

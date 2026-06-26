@@ -7,8 +7,8 @@ import (
 
 // Sentinel errors for programmatic error handling.
 var (
-	ErrCLINotFound  = errors.New("claude CLI not found")
-	ErrEmptyPrompt  = errors.New("empty prompt")
+	ErrCLINotFound = errors.New("claude CLI not found")
+	ErrEmptyPrompt = errors.New("empty prompt")
 )
 
 // CLIError is returned when the Claude Code CLI process fails.

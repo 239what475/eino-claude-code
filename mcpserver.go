@@ -57,8 +57,8 @@ func newMCPServer(tools []tool.InvokableTool) (*mcpServer, error) {
 
 	port := listener.Addr().(*net.TCPAddr).Port
 
-	httpServer := &http.Server{Handler: handler}
-	go func() { httpServer.Serve(listener) }() //nolint:errcheck
+	httpServer := &http.Server{Handler: handler, ReadHeaderTimeout: 5 * time.Second}
+	go func() { _ = httpServer.Serve(listener) }()
 
 	return &mcpServer{
 		httpServer: httpServer,
@@ -85,7 +85,7 @@ func (m *mcpServer) mcpConfigJSON() string {
 func (m *mcpServer) close() {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
-	m.httpServer.Shutdown(ctx) //nolint:errcheck
+	_ = m.httpServer.Shutdown(ctx)
 }
 
 // registerEinoTool registers a single eino tool with the MCP server.
@@ -113,12 +113,12 @@ func registerEinoTool(server *mcp.Server, ctx context.Context, t tool.InvokableT
 			argsJSON = "{}"
 		}
 
-		result, err := einoTool.InvokableRun(ctx, argsJSON)
-		if err != nil {
+		result, runErr := einoTool.InvokableRun(ctx, argsJSON)
+		if runErr != nil {
 			return &mcp.CallToolResult{
 				IsError: true,
-				Content: []mcp.Content{&mcp.TextContent{Text: err.Error()}},
-			}, nil
+				Content: []mcp.Content{&mcp.TextContent{Text: runErr.Error()}},
+			}, runErr
 		}
 
 		return &mcp.CallToolResult{
@@ -139,7 +139,7 @@ func einoParamsToJSONSchema(info *schema.ToolInfo) (map[string]any, error) {
 	}
 
 	// Use eino's built-in ToJSONSchema, then marshal → unmarshal to map.
-	js, err := info.ParamsOneOf.ToJSONSchema()
+	js, err := info.ParamsOneOf.ToJSONSchema() //nolint:staticcheck
 	if err != nil {
 		return nil, fmt.Errorf("eino ToJSONSchema: %w", err)
 	}

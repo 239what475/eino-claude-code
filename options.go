@@ -1,4 +1,5 @@
 package claudecode
+
 import "github.com/cloudwego/eino/components/tool"
 
 // Options holds all configuration for a ClaudeCodeAgent.
@@ -139,7 +140,6 @@ type Options struct {
 	// (empty string for boolean flags).
 	ExtraArgs map[string]string
 
-
 	// --- Internal / testing ---
 	// Runner abstracts CLI execution for testing.
 	Runner runner
@@ -157,13 +157,13 @@ type AgentDefinition struct {
 // DefaultOptions returns the recommended default configuration.
 func DefaultOptions() *Options {
 	return &Options{
-		Name:                              "claude-code",
-		Description:                       "Invokes the locally installed Claude Code CLI to handle complex, multi-step tasks with file operations, bash commands, and MCP tools.",
-		Bin:                               FindCLI("claude"),
-		MaxTurns:                          0,
-		Bare:                              true,
+		Name:                               "claude-code",
+		Description:                        "Invokes the locally installed Claude Code CLI to handle complex, multi-step tasks with file operations, bash commands, and MCP tools.",
+		Bin:                                FindCLI("claude"),
+		MaxTurns:                           0,
+		Bare:                               true,
 		ExcludeDynamicSystemPromptSections: true,
-		PermissionMode:                    "dontAsk",
-		StrictMCPConfig:                   true,
+		PermissionMode:                     "dontAsk",
+		StrictMCPConfig:                    true,
 	}
 }

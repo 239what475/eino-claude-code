@@ -34,6 +34,7 @@ type execRunner struct {
 }
 
 func (r *execRunner) run(ctx context.Context, args []string) ([]cliResponse, error) {
+	//nolint:gosec
 	cmd := exec.CommandContext(ctx, r.bin, args...)
 
 	// Set working directory
@@ -115,6 +116,7 @@ func (r *execRunner) runStreaming(ctx context.Context, args []string) <-chan str
 	go func() {
 		defer close(ch)
 
+		//nolint:gosec // CLI wrapper -- subprocess execution is intentional
 		cmd := exec.CommandContext(ctx, r.bin, args...)
 		if r.cwd != "" {
 			cmd.Dir = r.cwd

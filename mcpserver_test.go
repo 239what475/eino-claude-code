@@ -25,7 +25,9 @@ func (t *echoTool) Info(ctx context.Context) (*schema.ToolInfo, error) {
 }
 
 func (t *echoTool) InvokableRun(ctx context.Context, argsJSON string, opts ...tool.Option) (string, error) {
-	var args struct{ Message string `json:"message"` }
+	var args struct {
+		Message string `json:"message"`
+	}
 	if err := json.Unmarshal([]byte(argsJSON), &args); err != nil {
 		return "", err
 	}
