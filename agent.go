@@ -80,6 +80,10 @@ func (a *ClaudeCodeAgent) Description(ctx context.Context) string {
 }
 
 // Run executes the Claude Code CLI and returns a stream of Agent events.
+//
+// Each call spawns a new one-shot claude -p process. If [WithCustomTools]
+// is configured, an embedded MCP HTTP server starts automatically and is
+// passed to the CLI via --mcp-config; it shuts down when the CLI exits.
 func (a *ClaudeCodeAgent) Run(ctx context.Context, input *adk.AgentInput, opts ...adk.AgentRunOption) *adk.AsyncIterator[*adk.AgentEvent] {
 	iter, gen := adk.NewAsyncIteratorPair[*adk.AgentEvent]()
 
