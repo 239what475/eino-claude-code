@@ -45,12 +45,12 @@ func run() error {
 	}
 
 	fmt.Println("── Claude Code with custom eino tools ──")
-	fmt.Println("   Available: calculator (returns [EINO-TOOL] prefix), weather")
+	fmt.Println("   Available: calculator, weather")
 	fmt.Println()
 
 	runner := adk.NewRunner(ctx, adk.RunnerConfig{Agent: agent})
 	events := runner.Run(ctx, []adk.Message{
-		schema.UserMessage("Use the calculator tool to compute 123 * 456, then the weather tool for Tokyo. Report exactly what each tool returns."),
+		schema.UserMessage("Use the calculator tool to compute 123 * 456, then the weather tool for Tokyo."),
 	})
 
 	for {
@@ -81,8 +81,6 @@ func run() error {
 // ── Custom Tools ──
 
 // calculatorTool implements tool.InvokableTool — a simple calculator.
-// Its output includes a distinctive [EINO-TOOL] prefix so you can tell
-// it was actually called (vs. the model using Bash to compute).
 type calculatorTool struct{}
 
 func (t *calculatorTool) Info(ctx context.Context) (*schema.ToolInfo, error) {
@@ -131,7 +129,7 @@ func (t *calculatorTool) InvokableRun(ctx context.Context, argumentsInJSON strin
 		return "", fmt.Errorf("unknown operator: %q", op)
 	}
 
-	return fmt.Sprintf("[EINO-TOOL] %d %s %d = %d", a, op, b, result), nil
+	return fmt.Sprintf("%d %s %d = %d", a, op, b, result), nil
 }
 
 // weatherTool implements tool.InvokableTool — returns mock weather data.
@@ -158,5 +156,5 @@ func (t *weatherTool) InvokableRun(ctx context.Context, argumentsInJSON string, 
 	if err := json.Unmarshal([]byte(argumentsInJSON), &args); err != nil {
 		return "", fmt.Errorf("parse args: %w", err)
 	}
-	return fmt.Sprintf("[EINO-TOOL] Weather in %s: sunny, 22°C, humidity 45%%, wind 12 km/h", args.City), nil
+	return fmt.Sprintf("Weather in %s: sunny, 22°C, humidity 45%%, wind 12 km/h", args.City), nil
 }
