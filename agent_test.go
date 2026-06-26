@@ -407,7 +407,6 @@ func TestBuildArgsAllOptions(t *testing.T) {
 	opts.AppendSystemPrompt = "Be helpful."
 	opts.FallbackModel = "claude-haiku-4-5"
 	opts.MaxBudgetUSD = 10.0
-	opts.PermissionPromptToolName = "custom"
 	opts.ForkSession = true
 	opts.MCPConfigPath = "/path/to/mcp.json"
 	opts.StructuredOutput = `{"type":"object"}`
@@ -495,18 +494,6 @@ func TestBuildArgs_NoSessionPersistence(t *testing.T) {
 	}
 }
 
-func TestBuildArgs_NoSessionPersistence_ClientMode(t *testing.T) {
-	// --no-session-persistence should NOT appear in Client mode args.
-	opts := DefaultOptions()
-	opts.NoSessionPersistence = true
-
-	args := opts.buildClientArgs()
-	argStr := strings.Join(args, " ")
-
-	if strings.Contains(argStr, "--no-session-persistence") {
-		t.Error("--no-session-persistence should not be present in Client mode")
-	}
-}
 
 func TestBuildArgs_Agents(t *testing.T) {
 	opts := DefaultOptions()

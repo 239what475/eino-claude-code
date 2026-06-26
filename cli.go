@@ -182,15 +182,17 @@ func readStderr(r io.Reader, fn func(string)) {
 	}
 	_ = scanner.Err() // ignore scan errors on stderr (best-effort)
 }
-
 func readAll(r interface{ Read([]byte) (int, error) }) ([]byte, error) {
 	var buf []byte
 	tmp := make([]byte, 4096)
 	for {
 		n, err := r.Read(tmp)
 		buf = append(buf, tmp[:n]...)
-		if err != nil {
+		if err == io.EOF {
 			return buf, nil
+		}
+		if err != nil {
+			return buf, err
 		}
 	}
 }

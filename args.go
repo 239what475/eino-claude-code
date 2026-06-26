@@ -1,6 +1,8 @@
 package claudecode
 
 import (
+	"strings"
+	"sort"
 	"fmt"
 	"os/exec"
 )
@@ -27,10 +29,6 @@ func (o *Options) BuildFlags() []string {
 	return o.buildFlags(true)
 }
 
-// buildClientArgs constructs args for Client mode (stdin JSON protocol, no -p).
-func (o *Options) buildClientArgs() []string {
-	return o.buildFlags(false)
-}
 
 // buildFlags constructs CLI flags. When oneShot is true, adds -p and base flags.
 func (o *Options) buildFlags(oneShot bool) []string {
@@ -171,28 +169,14 @@ func (o *Options) buildFlags(oneShot bool) []string {
 	return args
 }
 
-func join(ss []string, sep string) string {
-	if len(ss) == 0 {
-		return ""
-	}
-	s := ss[0]
-	for i := 1; i < len(ss); i++ {
-		s += sep + ss[i]
-	}
-	return s
-}
+func join(ss []string, sep string) string { return strings.Join(ss, sep) }
+
 
 func sortedKeys(m map[string]string) []string {
 	keys := make([]string, 0, len(m))
 	for k := range m {
 		keys = append(keys, k)
 	}
-	for i := 0; i < len(keys)-1; i++ {
-		for j := i + 1; j < len(keys); j++ {
-			if keys[i] > keys[j] {
-				keys[i], keys[j] = keys[j], keys[i]
-			}
-		}
-	}
+	sort.Strings(keys)
 	return keys
 }

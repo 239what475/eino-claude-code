@@ -8,8 +8,6 @@ import (
 // Sentinel errors for programmatic error handling.
 var (
 	ErrCLINotFound  = errors.New("claude CLI not found")
-	ErrCLITimedOut  = errors.New("claude CLI timed out")
-	ErrNotConnected = errors.New("client not connected")
 	ErrEmptyPrompt  = errors.New("empty prompt")
 )
 

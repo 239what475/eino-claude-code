@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net"
 	"net/http"
+	"time"
 
 	"github.com/cloudwego/eino/components/tool"
 	"github.com/cloudwego/eino/schema"
@@ -16,8 +17,8 @@ import (
 // to Claude Code CLI. The server is started on a random localhost port
 // and the CLI is configured to connect to it via --mcp-config.
 type mcpServer struct {
-	listener net.Listener
-	port     int
+	httpServer *http.Server
+	port       int
 }
 
 // newMCPServer creates an MCP server with the given eino tools registered.
@@ -56,11 +57,12 @@ func newMCPServer(tools []tool.InvokableTool) (*mcpServer, error) {
 
 	port := listener.Addr().(*net.TCPAddr).Port
 
-	go http.Serve(listener, handler) //nolint:errcheck
+	httpServer := &http.Server{Handler: handler}
+	go func() { httpServer.Serve(listener) }() //nolint:errcheck
 
 	return &mcpServer{
-		listener: listener,
-		port:     port,
+		httpServer: httpServer,
+		port:       port,
 	}, nil
 }
 
@@ -78,9 +80,12 @@ func (m *mcpServer) mcpConfigJSON() string {
 	return string(b)
 }
 
-// close shuts down the MCP HTTP server.
+// close gracefully shuts down the MCP HTTP server, waiting up to 5 seconds
+// for in-flight requests to complete before forcefully closing.
 func (m *mcpServer) close() {
-	m.listener.Close()
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	m.httpServer.Shutdown(ctx) //nolint:errcheck
 }
 
 // registerEinoTool registers a single eino tool with the MCP server.

@@ -80,6 +80,9 @@ func convertCLIToAgentEvents(responses []cliResponse, agentName string, gen *adk
 			if resp.IsError || resp.Error != "" {
 				gen.Send(errorEvent(agentName, fmt.Sprintf("CLI system error: %s", resp.Error)))
 			}
+			if resp.Subtype == "init" && resp.SessionID != "" {
+				cliSessionID = resp.SessionID
+			}
 		}
 	}
 
@@ -189,6 +192,9 @@ func convertCLIStreamToAgentEvents(
 		case "system":
 			if resp.IsError || resp.Error != "" {
 				gen.Send(errorEvent(agentName, fmt.Sprintf("CLI system error: %s", resp.Error)))
+			}
+			if resp.Subtype == "init" && resp.SessionID != "" {
+				cliSessionID = resp.SessionID
 			}
 		}
 	}

@@ -23,7 +23,7 @@ go get github.com/239what475/eino-claude-code
 
 Claude Code CLI 是一个**自包含的完整 Agent**——它内部有自己的 ReAct 循环、工具执行、会话管理。eino-claude-code 不做的事情：把 CLI 拆开、模拟 ChatModel。它做的事情：给 CLI 套上 eino 的 Agent 接口，使其能无缝融入 eino 的多 Agent 编排、流式输出、中断恢复、可观测性体系。
 
-## 五种集成模式
+## 四种集成模式
 
 ### 模式 1：直接 Agent（最简单）
 
@@ -285,6 +285,8 @@ agentTool := adk.NewAgentTool(ctx, agent)
 ## 项目结构
 
 ```
+├── constants.go          # Built-in tool & agent name constants\
+├── mcpserver.go          # Embedded MCP server (eino tools → MCP)
 ├── agent.go              # ClaudeCodeAgent (adk.Agent + adk.ResumableAgent)
 ├── agent_test.go         # 单元测试（mock CLI）
 ├── args.go               # FindCLI + BuildArgs
@@ -297,10 +299,16 @@ agentTool := adk.NewAgentTool(ctx, agent)
 ├── session.go            # NewSessionID
 ├── tool.go               # ClaudeCodeTool (tool.InvokableTool)
 ├── types.go              # CLI JSON 消息类型
-├── examples/
-│   ├── helloworld/       # 最简示例（流式输出 + session）
-│   ├── tool/             # ChatModelAgent 调度 ClaudeCodeTool
-└── README.md
+	├── examples/
+	│   ├── helloworld/       # 最简示例
+	│   ├── tool/             # ChatModelAgent 调度 ClaudeCodeTool
+	│   ├── session/          # Session 跨轮共享上下文
+	│   ├── customtools/      # eino 工具 → MCP 自动暴露
+	│   ├── runas/            # 以自定义 agent 身份运行
+	│   ├── delegate/         # MCP 工具版子 agent 委派
+	│   ├── chain/            # Writer → Reviewer 串行编排
+	│   └── parallel/         # 性能 + 安全 并行分析
+	└── README.md
 ```
 
 ## 与相关项目的对比

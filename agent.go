@@ -52,9 +52,14 @@ func New(opts ...Option) (*ClaudeCodeAgent, error) {
 		// via WithAgents cannot be used for delegation. Warn unless the user selected
 		// a specific agent to run as, or explicitly turned off Bare.
 		if o.Bare && len(o.Agents) > 0 && o.Agent == "" {
-			fmt.Fprintf(os.Stderr, "WithAgents is set, but Bare mode (default) removes the Task tool. " +
+			msg := "WithAgents is set, but Bare mode (default) removes the Task tool. " +
 				"Defined agents will not be usable for delegation. " +
-				"Use WithAgent(\"name\") to run as a custom agent, or WithBare(false) to enable delegation.")
+				"Use WithAgent(\"name\") to run as a custom agent, or WithBare(false) to enable delegation.\n"
+			if o.Stderr != nil {
+				o.Stderr(msg)
+			} else {
+				fmt.Fprintf(os.Stderr, "%s", msg)
+			}
 		}
 	}
 	return &ClaudeCodeAgent{
