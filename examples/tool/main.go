@@ -42,7 +42,10 @@ func run() error {
 				"Use for: file operations, shell commands, code analysis, git, web search."),
 		claudecode.WithMaxTurns(10),
 		claudecode.WithPermissionMode("acceptEdits"),
-		claudecode.WithAllowedTools("Read", "Write", "Edit", "Bash", "Glob", "Grep"),
+		claudecode.WithAllowedTools(
+				claudecode.ToolRead, claudecode.ToolWrite, claudecode.ToolEdit,
+				claudecode.ToolBash, claudecode.ToolGlob, claudecode.ToolGrep,
+			),
 	)
 	if err != nil {
 		return fmt.Errorf("create tool: %w", err)
