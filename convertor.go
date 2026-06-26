@@ -95,7 +95,7 @@ func convertCLIToAgentEvents(responses []cliResponse, agentName string, gen *adk
 // Returns finalResult, cliSessionID, and error.
 func convertCLIStreamToAgentEvents(
 	ctx context.Context,
-	streamCh <-chan streamEvent,
+	streamCh <-chan StreamEvent,
 	agentName string,
 	gen *adk.AsyncGenerator[*adk.AgentEvent],
 	opts convertOptions,

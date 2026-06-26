@@ -141,8 +141,8 @@ type Options struct {
 	ExtraArgs map[string]string
 
 	// --- Internal / testing ---
-	// Runner abstracts CLI execution for testing.
-	Runner runner
+	// Runner allows custom CLI execution (default: execRunner).
+	Runner Runner
 }
 
 // AgentDefinition defines a custom agent type for Claude Code's sub-agent system.

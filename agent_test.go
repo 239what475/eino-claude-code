@@ -16,21 +16,21 @@ type mockRunner struct {
 	lastArgs  []string
 }
 
-func (m *mockRunner) run(ctx context.Context, args []string) ([]cliResponse, error) {
+func (m *mockRunner) Run(ctx context.Context, args []string) ([]cliResponse, error) {
 	m.lastArgs = append([]string(nil), args...)
 	return m.responses, m.err
 }
 
-func (m *mockRunner) runStreaming(ctx context.Context, args []string) <-chan streamEvent {
+func (m *mockRunner) RunStreaming(ctx context.Context, args []string) <-chan StreamEvent {
 	m.lastArgs = append([]string(nil), args...)
-	ch := make(chan streamEvent, len(m.responses)+1)
+	ch := make(chan StreamEvent, len(m.responses)+1)
 	go func() {
 		defer close(ch)
 		for _, r := range m.responses {
-			ch <- streamEvent{Response: r}
+			ch <- StreamEvent{Response: r}
 		}
 		if m.err != nil {
-			ch <- streamEvent{Err: m.err}
+			ch <- StreamEvent{Err: m.err}
 		}
 	}()
 	return ch
@@ -104,7 +104,7 @@ func TestAgentRunSimpleText(t *testing.T) {
 
 	agent, err := New(
 		WithName("test-agent"),
-		withRunner(mock),
+		WithRunner(mock),
 	)
 	if err != nil {
 		t.Fatalf("New() error = %v", err)
@@ -217,7 +217,7 @@ func TestAgentRunWithToolEvents(t *testing.T) {
 		agent, err := New(
 			WithName("tool-test"),
 			WithEmitToolEvents(),
-			withRunner(mock),
+			WithRunner(mock),
 		)
 		if err != nil {
 			t.Fatalf("New() error = %v", err)
@@ -266,7 +266,7 @@ func TestAgentRunWithToolEvents(t *testing.T) {
 	t.Run("EmitToolEvents=false (default)", func(t *testing.T) {
 		agent, err := New(
 			WithName("no-tool-test"),
-			withRunner(mock),
+			WithRunner(mock),
 		)
 		if err != nil {
 			t.Fatalf("New() error = %v", err)
@@ -342,7 +342,7 @@ func TestBuildArgs(t *testing.T) {
 
 func TestAgentErrorPaths(t *testing.T) {
 	t.Run("empty prompt returns error", func(t *testing.T) {
-		agent, _ := New(withRunner(&mockRunner{}))
+		agent, _ := New(WithRunner(&mockRunner{}))
 		iter := agent.Run(context.Background(), &adk.AgentInput{
 			Messages: []*schema.Message{},
 		})
@@ -367,7 +367,7 @@ func TestAgentErrorPaths(t *testing.T) {
 			responses: []cliResponse{},
 			err:       &CLIError{Message: "CLI crashed"},
 		}
-		agent, _ := New(withRunner(mock))
+		agent, _ := New(WithRunner(mock))
 		iter := agent.Run(context.Background(), &adk.AgentInput{
 			Messages: []*schema.Message{{Role: schema.User, Content: "hello"}},
 		})

@@ -72,7 +72,7 @@ func TestClaudeCodeTool_InvokableRun_WithTask(t *testing.T) {
 
 	ct, err := NewTool(
 		WithName("executor"),
-		withRunner(mock),
+		WithRunner(mock),
 	)
 	if err != nil {
 		t.Fatalf("NewTool() error = %v", err)
@@ -94,7 +94,7 @@ func TestClaudeCodeTool_InvokableRun_AgentError(t *testing.T) {
 
 	ct, err := NewTool(
 		WithName("failing"),
-		withRunner(mock),
+		WithRunner(mock),
 	)
 	if err != nil {
 		t.Fatalf("NewTool() error = %v", err)

@@ -8,24 +8,27 @@ import (
 	"io"
 	"os/exec"
 	"strings"
+	"syscall"
 )
 
-// streamEvent is a single event from the streaming CLI reader.
-type streamEvent struct {
+// StreamEvent is a single event from the streaming CLI reader.
+type StreamEvent struct {
 	Response cliResponse
 	Err      error
 }
 
-// runner abstracts CLI process execution for testability.
-type runner interface {
-	// run executes the CLI and returns all responses (batch mode).
-	run(ctx context.Context, args []string) ([]cliResponse, error)
-	// runStreaming reads CLI responses as they arrive on stdout.
+// Runner abstracts CLI process execution for testability and custom deployment
+// (e.g. Docker containers, SSH remotes). The default implementation is [execRunner].
+type Runner interface {
+	// Run executes the CLI and returns all responses (batch mode).
+	Run(ctx context.Context, args []string) ([]cliResponse, error)
+	// RunStreaming reads CLI responses as they arrive on stdout.
 	// The channel is closed when the CLI process exits or ctx is cancelled.
-	runStreaming(ctx context.Context, args []string) <-chan streamEvent
+	RunStreaming(ctx context.Context, args []string) <-chan StreamEvent
 }
 
-// execRunner is the production implementation that spawns the claude CLI.
+// execRunner is the default Runner that spawns the claude CLI as a local process.
+// It uses process group killing to clean up child processes (bash, tools).
 type execRunner struct {
 	bin    string
 	cwd    string
@@ -33,9 +36,10 @@ type execRunner struct {
 	stderr func(string)
 }
 
-func (r *execRunner) run(ctx context.Context, args []string) ([]cliResponse, error) {
+func (r *execRunner) Run(ctx context.Context, args []string) ([]cliResponse, error) {
 	//nolint:gosec
 	cmd := exec.CommandContext(ctx, r.bin, args...)
+	cmd.SysProcAttr = &syscall.SysProcAttr{Setpgid: true}
 
 	// Set working directory
 	if r.cwd != "" {
@@ -88,7 +92,7 @@ func (r *execRunner) run(ctx context.Context, args []string) ([]cliResponse, err
 	}
 
 	if scanErr := scanner.Err(); scanErr != nil {
-		_ = cmd.Process.Kill()
+		killProcessGroup(cmd)
 		_ = cmd.Wait() //nolint:errcheck
 		return responses, fmt.Errorf("read stdout: %w", scanErr)
 	}
@@ -110,14 +114,15 @@ func (r *execRunner) run(ctx context.Context, args []string) ([]cliResponse, err
 }
 
 // RunStreaming reads CLI responses as they arrive on stdout.
-func (r *execRunner) runStreaming(ctx context.Context, args []string) <-chan streamEvent {
-	ch := make(chan streamEvent, 10)
+func (r *execRunner) RunStreaming(ctx context.Context, args []string) <-chan StreamEvent {
+	ch := make(chan StreamEvent, 10)
 
 	go func() {
 		defer close(ch)
 
 		//nolint:gosec // CLI wrapper -- subprocess execution is intentional
 		cmd := exec.CommandContext(ctx, r.bin, args...)
+		cmd.SysProcAttr = &syscall.SysProcAttr{Setpgid: true}
 		if r.cwd != "" {
 			cmd.Dir = r.cwd
 		}
@@ -127,17 +132,17 @@ func (r *execRunner) runStreaming(ctx context.Context, args []string) <-chan str
 
 		stdout, err := cmd.StdoutPipe()
 		if err != nil {
-			ch <- streamEvent{Err: fmt.Errorf("create stdout pipe: %w", err)}
+			ch <- StreamEvent{Err: fmt.Errorf("create stdout pipe: %w", err)}
 			return
 		}
 		stderrPipe, err := cmd.StderrPipe()
 		if err != nil {
-			ch <- streamEvent{Err: fmt.Errorf("create stderr pipe: %w", err)}
+			ch <- StreamEvent{Err: fmt.Errorf("create stderr pipe: %w", err)}
 			return
 		}
 
 		if err := cmd.Start(); err != nil {
-			ch <- streamEvent{Err: fmt.Errorf("start claude CLI: %w", err)}
+			ch <- StreamEvent{Err: fmt.Errorf("start claude CLI: %w", err)}
 			return
 		}
 
@@ -157,19 +162,19 @@ func (r *execRunner) runStreaming(ctx context.Context, args []string) <-chan str
 				continue
 			}
 			select {
-			case ch <- streamEvent{Response: resp}:
+			case ch <- StreamEvent{Response: resp}:
 			case <-ctx.Done():
-				_ = cmd.Process.Kill()
+				killProcessGroup(cmd)
 				return
 			}
 		}
 
 		if err := scanner.Err(); err != nil {
-			ch <- streamEvent{Err: fmt.Errorf("read stdout: %w", err)}
+			ch <- StreamEvent{Err: fmt.Errorf("read stdout: %w", err)}
 		}
 
 		if err := cmd.Wait(); err != nil {
-			ch <- streamEvent{Err: fmt.Errorf("claude CLI exited with error: %w", err)}
+			ch <- StreamEvent{Err: fmt.Errorf("claude CLI exited with error: %w", err)}
 		}
 	}()
 
@@ -196,5 +201,14 @@ func readAll(r interface{ Read([]byte) (int, error) }) ([]byte, error) {
 		if err != nil {
 			return buf, err
 		}
+	}
+}
+
+// killProcessGroup kills the process group of the command.
+// This ensures child processes (bash, tools) are cleaned up.
+func killProcessGroup(cmd *exec.Cmd) {
+	if cmd.Process != nil {
+		// Negative PID kills the entire process group.
+		_ = syscall.Kill(-cmd.Process.Pid, syscall.SIGKILL)
 	}
 }

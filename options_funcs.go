@@ -266,8 +266,8 @@ func WithStderr(fn func(string)) Option {
 	}
 }
 
-// withRunner overrides the CLI runner (for testing).
-func withRunner(r runner) Option {
+// WithRunner overrides the CLI runner (for testing).
+func WithRunner(r Runner) Option {
 	return func(o *Options) {
 		o.Runner = r
 	}

@@ -143,7 +143,7 @@ func (a *ClaudeCodeAgent) run(ctx context.Context, input *adk.AgentInput, gen *a
 
 	if input.EnableStreaming {
 		// Streaming mode: emit MessageStream chunks as CLI outputs text.
-		streamCh := a.opts.Runner.runStreaming(ctx, args)
+		streamCh := a.opts.Runner.RunStreaming(ctx, args)
 		_, cliSessionID, streamErr := convertCLIStreamToAgentEvents(ctx, streamCh, a.name, gen, convOpts)
 
 		if streamErr != nil {
@@ -168,7 +168,7 @@ func (a *ClaudeCodeAgent) run(ctx context.Context, input *adk.AgentInput, gen *a
 	}
 
 	// Batch mode: read all responses, then emit events.
-	responses, err := a.opts.Runner.run(ctx, args)
+	responses, err := a.opts.Runner.Run(ctx, args)
 	if err != nil {
 		if len(responses) > 0 {
 			if _, _, convErr := convertCLIToAgentEvents(responses, a.name, gen, convOpts); convErr != nil {

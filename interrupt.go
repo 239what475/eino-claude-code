@@ -85,7 +85,7 @@ func (a *ClaudeCodeAgent) resume(ctx context.Context, info *adk.ResumeInfo, gen 
 	defer func() { a.opts.Resume = origResume }()
 
 	args := a.opts.BuildArgs(prompt)
-	responses, err := a.opts.Runner.run(ctx, args)
+	responses, err := a.opts.Runner.Run(ctx, args)
 	if err != nil {
 		if len(responses) > 0 {
 			if _, _, e := convertCLIToAgentEvents(responses, a.name, gen, convOpts); e != nil {
