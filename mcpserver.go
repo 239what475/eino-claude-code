@@ -90,10 +90,14 @@ func registerEinoTool(server *mcp.Server, ctx context.Context, t tool.InvokableT
 		return fmt.Errorf("get tool info: %w", err)
 	}
 
+	schema, err := einoParamsToJSONSchema(info)
+	if err != nil {
+		return fmt.Errorf("convert schema for tool %q: %w", info.Name, err)
+	}
 	mcpTool := &mcp.Tool{
 		Name:        info.Name,
 		Description: info.Desc,
-		InputSchema: einoParamsToJSONSchema(info),
+		InputSchema: schema,
 	}
 
 	// Capture t for the closure.
@@ -122,26 +126,31 @@ func registerEinoTool(server *mcp.Server, ctx context.Context, t tool.InvokableT
 
 // einoParamsToJSONSchema converts eino ParamsOneOf to a map[string]any
 // compatible with MCP tool inputSchema requirements.
-func einoParamsToJSONSchema(info *schema.ToolInfo) map[string]any {
+// Returns an error if the schema conversion fails.
+func einoParamsToJSONSchema(info *schema.ToolInfo) (map[string]any, error) {
+	// No params at all → empty object schema is a valid default.
 	if info.ParamsOneOf == nil {
-		return map[string]any{"type": "object"}
+		return map[string]any{"type": "object"}, nil
 	}
 
 	// Use eino's built-in ToJSONSchema, then marshal → unmarshal to map.
 	js, err := info.ParamsOneOf.ToJSONSchema()
-	if err != nil || js == nil {
-		return map[string]any{"type": "object"}
+	if err != nil {
+		return nil, fmt.Errorf("eino ToJSONSchema: %w", err)
+	}
+	if js == nil {
+		return nil, fmt.Errorf("eino ToJSONSchema returned nil")
 	}
 
 	b, err := json.Marshal(js)
 	if err != nil {
-		return map[string]any{"type": "object"}
+		return nil, fmt.Errorf("marshal JSON schema: %w", err)
 	}
 
 	var result map[string]any
 	if err := json.Unmarshal(b, &result); err != nil {
-		return map[string]any{"type": "object"}
+		return nil, fmt.Errorf("unmarshal JSON schema: %w", err)
 	}
 
-	return result
+	return result, nil
 }
