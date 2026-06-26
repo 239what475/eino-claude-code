@@ -1,6 +1,10 @@
 package claudecode
 
-import "encoding/json"
+import (
+	"encoding/json"
+
+	"github.com/cloudwego/eino/components/tool"
+)
 
 // Option is a functional option for configuring a ClaudeCodeAgent.
 type Option func(*Options)
@@ -319,5 +323,18 @@ func WithDebug(filter string) Option {
 func WithDebugFile(path string) Option {
 	return func(o *Options) {
 		o.DebugFile = path
+	}
+}
+
+// WithCustomTools registers eino InvokableTools that are exposed to Claude Code
+// via an embedded MCP HTTP server. The server starts on a random localhost port
+// at agent.Run() time and is passed to the CLI via --mcp-config.
+//
+// Claude Code discovers these tools automatically and can call them during
+// task execution. This lets you extend Claude Code's capabilities with
+// arbitrary Go code while keeping the black-box executor model.
+func WithCustomTools(tools ...tool.InvokableTool) Option {
+	return func(o *Options) {
+		o.CustomTools = append(o.CustomTools, tools...)
 	}
 }

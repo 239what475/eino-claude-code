@@ -1,4 +1,5 @@
 package claudecode
+import "github.com/cloudwego/eino/components/tool"
 
 // Options holds all configuration for a ClaudeCodeAgent.
 type Options struct {
@@ -120,6 +121,10 @@ type Options struct {
 	// EmitToolEvents controls whether Claude Code's internal tool calls are surfaced
 	// as AgentEvents with ToolCalls.
 	EmitToolEvents bool
+	// CustomTools are eino InvokableTools exposed to Claude Code via an embedded
+	// MCP HTTP server. The server is started on a random localhost port and
+	// passed to the CLI via --mcp-config.
+	CustomTools []tool.InvokableTool
 
 	// --- Callbacks ---
 	// Stderr receives each line of stderr output from the CLI process.

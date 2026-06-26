@@ -98,9 +98,32 @@ func (a *ClaudeCodeAgent) run(ctx context.Context, input *adk.AgentInput, gen *a
 
 	convOpts := convertOptions{emitToolEvents: a.opts.EmitToolEvents}
 
+	// Start embedded MCP server if custom tools are configured.
+	mcpSrv, err := newMCPServer(a.opts.CustomTools)
+	if err != nil {
+		gen.Send(&adk.AgentEvent{
+			AgentName: a.name,
+			Err:       &AgentError{Message: "failed to start MCP server", Cause: err},
+		})
+		return
+	}
+	if mcpSrv != nil {
+		defer mcpSrv.close()
+	}
 
-	// One-shot mode: spawn a new CLI process per Run() call.
+	// Build CLI args.
 	args := a.opts.BuildArgs(prompt)
+
+	// Inject MCP config before the prompt. --mcp-config is variadic, so
+	// we insert "--" to stop option parsing and protect the prompt.
+	// Also auto-allow all tools from our embedded MCP server.
+	if mcpSrv != nil {
+		args = append(args[:len(args)-1],
+			"--mcp-config", mcpSrv.mcpConfigJSON(),
+			"--allowedTools", "mcp__eino-tools__*",
+			"--",
+			args[len(args)-1])
+	}
 
 	if input.EnableStreaming {
 		// Streaming mode: emit MessageStream chunks as CLI outputs text.
