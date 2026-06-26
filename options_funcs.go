@@ -338,3 +338,12 @@ func WithCustomTools(tools ...tool.InvokableTool) Option {
 		o.CustomTools = append(o.CustomTools, tools...)
 	}
 }
+
+// WithAgent selects which agent type to run as for this session.
+// The name must match a key defined via WithAgents, or a built-in agent
+// like "Plan" or "Explore". Passed to the CLI via --agent.
+func WithAgent(name string) Option {
+	return func(o *Options) {
+		o.Agent = name
+	}
+}

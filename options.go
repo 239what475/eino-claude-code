@@ -89,6 +89,10 @@ type Options struct {
 	// Agents is a JSON string defining custom agent types for sub-agent delegation.
 	// Use WithAgents(map[string]AgentDefinition{...}) to build it.
 	Agents string
+	// Agent selects which agent type to run the session as.
+	// Must match a key in Agents or a built-in agent.
+	// Passed to the CLI via --agent.
+	Agent string
 	// PluginDirs are paths to plugin directories or .zip files to load.
 	PluginDirs []string
 	// PluginURLs are URLs to fetch plugin .zip files from.

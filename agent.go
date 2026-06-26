@@ -1,6 +1,7 @@
 package claudecode
 
 import (
+	"os"
 	"context"
 	"fmt"
 	"runtime/debug"
@@ -45,6 +46,15 @@ func New(opts ...Option) (*ClaudeCodeAgent, error) {
 			cwd:    o.CWD,
 			env:    o.Env,
 			stderr: o.Stderr,
+		}
+
+		// When Bare is on (default), the CLI strips the Task tool, so agents defined
+		// via WithAgents cannot be used for delegation. Warn unless the user selected
+		// a specific agent to run as, or explicitly turned off Bare.
+		if o.Bare && len(o.Agents) > 0 && o.Agent == "" {
+			fmt.Fprintf(os.Stderr, "WithAgents is set, but Bare mode (default) removes the Task tool. " +
+				"Defined agents will not be usable for delegation. " +
+				"Use WithAgent(\"name\") to run as a custom agent, or WithBare(false) to enable delegation.")
 		}
 	}
 	return &ClaudeCodeAgent{

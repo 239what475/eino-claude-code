@@ -1,8 +1,12 @@
-// Example: Defining custom sub-agent types that Claude Code can delegate to.
+// Example: Running Claude Code as a custom agent type.
 //
-// WithAgents registers agent type definitions passed to the CLI via --agents.
-// Claude Code's internal Task tool can then delegate subtasks to these agents,
-// each with its own role, prompt, tools, and model.
+// WithAgents defines agent types. WithAgent selects which one to run as.
+// The session executes with that agent's system prompt, tools, and model.
+//
+// This works in Bare mode (default) because --agent selects the session
+// identity, independent of the Task tool.
+//
+// For delegation (Task tool dispatching to sub-agents), use WithBare(false).
 //
 // Usage:
 //
@@ -34,39 +38,31 @@ func main() {
 func run() error {
 	ctx := context.Background()
 
+	// Define a custom agent type and run AS it.
+	// The code-reviewer prompt and tools become the session's identity.
 	agent, err := claudecode.New(
 		claudecode.WithMaxTurns(10),
-		claudecode.WithEmitToolEvents(),
 		claudecode.WithAgents(map[string]claudecode.AgentDefinition{
 			"code-reviewer": {
-				Description: "Reviews code for bugs, style, and best practices.",
-				Prompt:      "You are a thorough code reviewer. Check for correctness, edge cases, and Go idioms. Be specific.",
+				Description: "Thorough code reviewer focused on bugs, style, and best practices.",
+				Prompt:      "You are a thorough code reviewer. When given a file to review, check for: correctness bugs, edge cases, performance issues, security vulnerabilities, and Go idioms. Be specific and actionable. Always reference exact line numbers.",
 				Tools:       []string{"Read", "Glob", "Grep"},
 				Model:       "haiku",
 			},
-			"doc-writer": {
-				Description: "Writes and improves documentation and code comments.",
-				Prompt:      "You are a technical writer. Write clear, concise Go doc comments.",
-				Tools:       []string{"Read", "Write"},
-				Model:       "haiku",
-			},
 		}),
+		claudecode.WithAgent("code-reviewer"), // run AS code-reviewer
 	)
 	if err != nil {
 		return fmt.Errorf("create agent: %w", err)
 	}
 
-	fmt.Println("── Claude Code with custom sub-agents ──")
-	fmt.Println("   Available: code-reviewer, doc-writer")
+	fmt.Println("── Running as code-reviewer agent ──")
+	fmt.Println("   (system prompt: thorough code review)")
 	fmt.Println()
 
 	runner := adk.NewRunner(ctx, adk.RunnerConfig{Agent: agent})
 	events := runner.Run(ctx, []adk.Message{
-		schema.UserMessage(
-			"Use the Task tool to delegate: " +
-				"1) Have code-reviewer review /home/what/myproject/eino-claude-code/session.go. " +
-				"2) Have doc-writer write an improved doc comment for it. " +
-				"Combine their outputs into a brief report."),
+		schema.UserMessage("Review /home/what/myproject/eino-claude-code/session.go. Be specific."),
 	})
 
 	for {
@@ -78,11 +74,7 @@ func run() error {
 			return evt.Err
 		}
 		if evt.Output != nil && evt.Output.MessageOutput != nil && evt.Output.MessageOutput.Message != nil {
-			msg := evt.Output.MessageOutput.Message
-			for _, tc := range msg.ToolCalls {
-				fmt.Printf("  [tool] → %s(%s)\n", tc.Function.Name, tc.Function.Arguments)
-			}
-			if c := strings.TrimSpace(msg.Content); c != "" {
+			if c := strings.TrimSpace(evt.Output.MessageOutput.Message.Content); c != "" {
 				fmt.Printf("  %s\n", c)
 			}
 		}

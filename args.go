@@ -112,6 +112,9 @@ func (o *Options) buildFlags(oneShot bool) []string {
 	if o.Agents != "" {
 		args = append(args, "--agents", o.Agents)
 	}
+	if o.Agent != "" {
+		args = append(args, "--agent", o.Agent)
+	}
 	if o.SettingSources != nil {
 		if len(o.SettingSources) == 0 {
 			args = append(args, "--setting-sources", "")
